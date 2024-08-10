@@ -424,7 +424,7 @@ class PaymentActionView(View):
             await interaction.response.send_message("Servicio no válido.", ephemeral=True)
             return
 
-        # Usar la otra API para TikTok y todos los servicios de Instagram excepto Likes
+        # Usar la otra API para TikTok y todos los servicios de Instagram excepto Likes (ESTO ES DE USO PERSONAL ASI QUE NO ES NECESARIO SI SOLO TIENES 1 API)
         use_alternate_api = (self.service_info["category"] == "TikTok" or
                              (self.service_info["category"] == "Instagram" and self.service_info["service"] != "Likes"))
         resultado = realizar_pedido(
