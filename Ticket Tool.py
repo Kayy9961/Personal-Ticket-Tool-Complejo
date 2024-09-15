@@ -15,15 +15,19 @@ informacion_canal_id = 1271642274605961268
 
 ALLOWED_USER_ID = 1238471224510648412  
 
-FOLLOWERS_IMAGE_URL = "https://raw.githubusercontent.com/Kayy9961/Data-Base-Personal/main/Followers.png"
+FOLLOWERS_IMAGE_URL = "https://raw.githubusercontent.com/Kayy9961/Data-Base-Personal/main/Seggg.png"
 
-def realizar_pedido(url, seguidores, service_id, use_alternate_api=False):
-    if use_alternate_api:
-        api_endpoint = "API DEL PANEL PRINCIPAL"  
-        api_key = "TU API KEY DEL PANEL PRINCIPAL" 
+def realizar_pedido(url, seguidores, service_id, category, service_name, use_alternate_api=False):
+    if category == "Instagram" and service_name == "Seguidores" and service_id == 9043:
+        api_endpoint = "TU API DE TU PANEL PRINCIPAL" 
+        api_key = "TU API KEY DE TU PANEL PRINCIPAL"  
+
+    elif use_alternate_api or (category == "TikTok" or (category == "Instagram" and service_name != "Likes")):
+        api_endpoint = "TU API DE TU PANEL 2 (NO OBLIGATORIO)"  
+        api_key = "TU API KEY DE TU PANEL 2 (NO OBLIGATORIO)" 
     else:
-        api_endpoint = "API DEL PANEL SECUNDARIO (OPCIONAL)" 
-        api_key = "TU API KEY DEL PANEL SECUNDARIO (OPCIONAL)"  
+        api_endpoint = "TU API DE TU PANEL 3 (NO OBLIGATORIO)"  
+        api_key = "TU API KEY DE TU PANEL 3 (NO OBLIGATORIO)" 
 
     headers = {
         "Content-Type": "application/json"
@@ -48,9 +52,11 @@ def realizar_pedido(url, seguidores, service_id, use_alternate_api=False):
     except requests.exceptions.RequestException as e:
         return f"Error durante la solicitud HTTP: {e}"
 
+
+
 class PersistentPlatformSelectView(View):
     def __init__(self):
-        super().__init__(timeout=None) 
+        super().__init__(timeout=None)  
         self.instagram_button = Button(label="Instagram", style=discord.ButtonStyle.primary, custom_id="platform_instagram_unique")
         self.tiktok_button = Button(label="TikTok", style=discord.ButtonStyle.primary, custom_id="platform_tiktok_unique")
         self.cerrar_ticket_button = Button(label="Cerrar Ticket", style=discord.ButtonStyle.danger, custom_id="platform_cerrar_ticket_unique")
@@ -64,8 +70,12 @@ class PersistentPlatformSelectView(View):
         self.add_item(self.cerrar_ticket_button)
 
     async def instagram(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        await interaction.message.edit(content="Buena elección, ahora elige el servicio:", view=SocialMediaView(category="Instagram"))
+        try:
+            print("Instagram button clicked!") 
+            await interaction.response.defer()  
+            await interaction.message.edit(content="Buena elección, ahora elige el servicio:", view=SocialMediaView(category="Instagram"))
+        except Exception as e:
+            print(f"Error in Instagram button: {e}")  
 
     async def tiktok(self, interaction: discord.Interaction):
         await interaction.response.defer()
@@ -79,23 +89,35 @@ class SocialMediaView(View):
     def __init__(self, category):
         super().__init__(timeout=None)
         self.category = category
+
         if category == "Instagram":
             self.seguidores_button = Button(label="Seguidores Instagram", style=discord.ButtonStyle.primary, custom_id="insta_seguidores_unique")
             self.likes_button = Button(label="Likes Instagram", style=discord.ButtonStyle.primary, custom_id="insta_likes_unique")
             self.visitas_button = Button(label="Visitas Instagram", style=discord.ButtonStyle.primary, custom_id="insta_visitas_unique")
+
+            self.seguidores_button.callback = self.select_service_quantity
+            self.likes_button.callback = self.select_service_quantity
+            self.visitas_button.callback = self.select_service_quantity
+
+            self.add_item(self.seguidores_button)
+            self.add_item(self.likes_button)
+            self.add_item(self.visitas_button)
+
         elif category == "TikTok":
             self.seguidores_button = Button(label="Seguidores TikTok", style=discord.ButtonStyle.primary, custom_id="tiktok_seguidores_unique")
             self.likes_button = Button(label="Likes TikTok", style=discord.ButtonStyle.primary, custom_id="tiktok_likes_unique")
             self.visitas_button = Button(label="Visitas TikTok", style=discord.ButtonStyle.primary, custom_id="tiktok_visitas_unique")
-        
-        # Assign the correct callback to each button
-        self.seguidores_button.callback = self.select_service_quantity
-        self.likes_button.callback = self.select_service_quantity
-        self.visitas_button.callback = self.select_service_quantity
+            self.compartidos_button = Button(label="Compartidos TikTok", style=discord.ButtonStyle.primary, custom_id="tiktok_compartidos_unique")
 
-        self.add_item(self.seguidores_button)
-        self.add_item(self.likes_button)
-        self.add_item(self.visitas_button)
+            self.seguidores_button.callback = self.select_service_quantity
+            self.likes_button.callback = self.select_service_quantity
+            self.visitas_button.callback = self.select_service_quantity
+            self.compartidos_button.callback = self.select_service_quantity
+
+            self.add_item(self.seguidores_button)
+            self.add_item(self.likes_button)
+            self.add_item(self.visitas_button)
+            self.add_item(self.compartidos_button)
 
         self.back_button = Button(label="Atrás", style=discord.ButtonStyle.secondary, custom_id="back_unique")
         self.cerrar_ticket_button = Button(label="Cerrar Ticket", style=discord.ButtonStyle.danger, custom_id="cerrar_ticket_service_unique")
@@ -117,7 +139,7 @@ class SocialMediaView(View):
             quantities = [str(i * 10000) for i in range(1, 11)] + ["500000"]
             title = "Cantidad de Visitas Instagram"
         elif interaction.data['custom_id'].startswith("tiktok_seguidores"):
-            quantities = [str(i * 10000) for i in range(1, 11)] + ["500000"]
+            quantities = [str(i * 1000) for i in range(1, 11)] + ["1000000"]
             title = "Cantidad de Seguidores TikTok"
         elif interaction.data['custom_id'].startswith("tiktok_likes"):
             quantities = [str(i * 10000) for i in range(1, 11)] + ["1000000"]
@@ -125,6 +147,9 @@ class SocialMediaView(View):
         elif interaction.data['custom_id'].startswith("tiktok_visitas"):
             quantities = [str(i * 100000) for i in range(1, 11)] + ["10000000"]
             title = "Cantidad de Visitas TikTok"
+        elif interaction.data['custom_id'].startswith("tiktok_compartidos"):
+            quantities = [str(i * 1000) for i in range(1, 11)] + ["100000"]
+            title = "Cantidad de Compartidos TikTok"
 
         service_info = {
             "category": self.category,
@@ -142,7 +167,6 @@ class SocialMediaView(View):
     async def cerrar_ticket(self, interaction: discord.Interaction):
         await interaction.response.defer()
         await interaction.channel.delete()
-
 
 class QuantityView(View):
     def __init__(self, service_info, quantities):
@@ -190,7 +214,7 @@ class QuantityView(View):
             embed.add_field(name="Enlace", value=self.service_info["link"], inline=False)
 
             confirmation_view = ConfirmationView(self.service_info)
-            await interaction.channel.purge(limit=100)
+            await interaction.channel.purge(limit=100)  
             await interaction.channel.send(embed=embed, view=confirmation_view)
 
         except asyncio.TimeoutError:
@@ -209,30 +233,30 @@ class QuantityView(View):
 price_list = {
     "TikTok": {
         "Seguidores": {
-            10000: 3.0,
-            20000: 6.0,
-                       30000: 9.0,
-            40000: 12.0,
-            50000: 15.0,
-            60000: 18.0,
-            70000: 21.0,
-            80000: 24.0,
-            90000: 27.0,
-            100000: 30.0,
-            500000: 150.0
+            1000: 0.7,
+            2000: 1.4,
+            3000: 2.1,
+            4000: 2.8,
+            5000: 3.5,
+            6000: 4.2,
+            7000: 4.9,
+            8000: 5.6,
+            9000: 6.3,
+            10000: 7.0,
+            100000: 70.0
         },
         "Likes": {
-            10000: 2.50,
-            20000: 5.0,
-            30000: 7.50,
-            40000: 10.0,
-            50000: 12.50,
-            60000: 15.0,
-            70000: 17.50,
-            80000: 20.0,
-            90000: 22.50,
-            100000: 25.0,
-            1000000: 250.0
+            10000: 1.50,
+            20000: 3.0,
+            30000: 4.50,
+            40000: 6.0,
+            50000: 7.50,
+            60000: 9.0,
+            70000: 10.5,
+            80000: 12.0,
+            90000: 13.5,
+            100000: 15.0,
+            1000000: 150.0
         },
         "Visitas": {
             100000: 0.25,
@@ -246,21 +270,34 @@ price_list = {
             900000: 2.25,
             1000000: 2.50,
             10000000: 100.0
+        },
+        "Compartidos": {
+            1000: 0.50,
+            2000: 1.00,
+            3000: 1.50,
+            4000: 2.00,
+            5000: 2.50,
+            6000: 3.00,
+            7000: 3.50,
+            8000: 4.00,
+            9000: 4.50,
+            10000: 5.00,
+            100000: 20.00
         }
     },
     "Instagram": {
         "Seguidores": {
-            1000: 1.0,
-            2000: 2.0,
-            3000: 3.0,
-            4000: 4.0,
-            5000: 5.0,
-            6000: 6.0,
-            7000: 7.0,
-            8000: 8.0,
-            9000: 9.0,
-            10000: 10.0,
-            100000: 100.0
+            1000: 1.2,
+            2000: 2.4,
+            3000: 3.6,
+            4000: 4.8,
+            5000: 6.0,
+            6000: 7.2,
+            7000: 8.4,
+            8000: 9.6,
+            9000: 10.8,
+            10000: 12.0,
+            50000: 50.0
         },
         "Likes": {
             1000: 0.15,
@@ -305,23 +342,41 @@ class ConfirmationView(View):
         self.add_item(self.retry_button)
 
     async def confirm(self, interaction: discord.Interaction):
+        await interaction.channel.purge(limit=100)  
+
         base_prices = price_list[self.service_info["category"]][self.service_info["service"]]
         total_price = base_prices[int(self.service_info["quantity"])]
 
         embed_payment = discord.Embed(
             title="Instrucciones de Pago",
-            description=(
-                f"- Por favor, envía el dinero a: https://www.paypal.me/KayyShop como amigos y familiares.\n"
+            description=( 
+                f"- Por favor, envía el dinero a: https://www.paypal.me/SoyKayy como amigos y familiares.\n"
                 f"- Importe a pagar: {total_price:.2f}€\n"
                 "- Recuerda que no hacemos reembolso pase lo que pase.\n"
                 "- La cuenta debe de ser pública.\n"
+                "- Hay un 0% de posibilidades de baneo.\n"
+                "- Suele caer entre un 2%-4% por seguridad.\n"
                 "- Si tienes algún problema envía un mensaje a <@1238471224510648412>"
             ),
             color=discord.Color.green()
         )
-        await interaction.channel.purge(limit=100)  
+
+        if self.service_info["category"] == "Instagram" and self.service_info["service"] == "Seguidores":
+            embed_warning = discord.Embed(
+                title="Importante",
+                description=(
+                f"- Por favor, asegúrate de que la opción **'Marcar Para Revisión'** está desactivada antes de continuar.\n"
+                "- Haz clic en el botón de abajo cuando estés listo para continuar con el pago."
+            ),
+                color=discord.Color.red()
+            )
+            embed_warning.set_image(url="https://raw.githubusercontent.com/Kayy9961/Data-Base-Personal/main/IMG_5466%20copia.png")
+
+            await interaction.channel.send(embed=embed_warning)
+
         await interaction.channel.send(embed=embed_payment)
-        await send_followers_image(interaction.channel)
+
+        await send_followers_image(interaction.channel) 
 
         payment_confirmation_view = PaymentConfirmationView(self.service_info, interaction.channel)
         await interaction.channel.send(
@@ -331,10 +386,10 @@ class ConfirmationView(View):
 
     async def retry(self, interaction: discord.Interaction):
         await interaction.channel.purge(limit=100) 
-        await send_followers_image(interaction.channel)  
+        await send_followers_image(interaction.channel) 
         await interaction.channel.send("Vamos a empezar de nuevo. Selecciona la plataforma para seguidores:", view=PersistentPlatformSelectView())
 
-    async def cerrar_ticket(self, interaction: discord.Interaction):
+async def cerrar_ticket(self, interaction: discord.Interaction):
         await interaction.response.defer()
         await interaction.channel.delete()
 
@@ -377,7 +432,7 @@ class PaymentConfirmationView(View):
         if canal_informacion is not None:
             confirmation_buttons = PaymentActionView(self.service_info, interaction.user, self.ticket_channel)
             message = await canal_informacion.send(embed=embed_order, view=confirmation_buttons)
-            confirmation_buttons.message = message 
+            confirmation_buttons.message = message  
         else:
             await interaction.response.send_message("Error: No se pudo encontrar el canal de información para enviar el resumen del pedido.", ephemeral=True)
 
@@ -387,7 +442,7 @@ class PaymentActionView(View):
         self.service_info = service_info
         self.user = user
         self.ticket_channel = ticket_channel
-        self.message = None 
+        self.message = None  
 
         self.approve_button = Button(label="Confirmar Pago", style=discord.ButtonStyle.success, custom_id="approve_payment")
         self.reject_button = Button(label="Rechazar Pago", style=discord.ButtonStyle.danger, custom_id="reject_payment")
@@ -405,14 +460,15 @@ class PaymentActionView(View):
 
         service_ids = {
             "Instagram": {
-                "Seguidores": 0000,
-                "Likes": 0000,
-                "Visitas": 0000
-            },                   #PON ID DE LOS PEDIDOS
+                "Seguidores": 9043,
+                "Likes": 6770,
+                "Visitas": 5463
+            },
             "TikTok": {
-                "Seguidores": 0000,
-                "Likes": 0000,
-                "Visitas": 0000
+                "Seguidores": 5809,
+                "Likes": 5779,
+                "Visitas": 1184,
+                "Compartidos": 5783
             }
         }
 
@@ -425,8 +481,10 @@ class PaymentActionView(View):
                              (self.service_info["category"] == "Instagram" and self.service_info["service"] != "Likes"))
         resultado = realizar_pedido(
             url=self.service_info["link"],
-            seguidores=self.service_info["quantity"],
+            seguidores=int(self.service_info["quantity"]),
             service_id=service_id,
+            category=self.service_info["category"],
+            service_name=self.service_info["service"],
             use_alternate_api=use_alternate_api
         )
 
@@ -447,7 +505,10 @@ class PaymentActionView(View):
             embed_accepted.add_field(name="Servicio", value=self.service_info["service"], inline=False)
             embed_accepted.add_field(name="Cantidad", value=self.service_info["quantity"], inline=False)
             embed_accepted.add_field(name="Enlace", value=self.service_info["link"], inline=False)
-            await self.ticket_channel.send(embed=embed_accepted)
+            
+            buy_again_view = BuyAgainView(self.ticket_channel)
+            await self.ticket_channel.send(embed=embed_accepted, view=buy_again_view)
+            await self.ticket_channel.send(f"{self.user.mention}, una vez que se haya entregado tu pedido, por favor deja tu reseña en <#1263936105213067437>.")
 
             if self.message:
                 await self.message.delete()
@@ -464,19 +525,38 @@ class PaymentActionView(View):
 
         embed_rejected = discord.Embed(
             title="¡Solicitud Rechazada!",
-            description=(
-                "- Asegurate que enviar un link correspondiente.\n"
-                "- Asegurate de enviar el dinero como amigos y familiares.\n"
-                "- Asegurate de enviar la cantidad correspondiente de dinero.\n"
-                "- !Si hiciste algún pago será reembolsado!\n"
-                "- Si tienes algún problema envía un mensaje a <@1238471224510648412>"
-            ),       
+            description="Asegúrate de enviar el pago correctamente.",
             color=discord.Color.red()
         )
-        await self.ticket_channel.send(embed=embed_rejected)
+        
+        buy_again_view = BuyAgainView(self.ticket_channel)
+        await self.ticket_channel.send(embed=embed_rejected, view=buy_again_view)
 
         if self.message:
             await self.message.delete()
+
+class BuyAgainView(View):
+    def __init__(self, ticket_channel):
+        super().__init__(timeout=None)
+        self.ticket_channel = ticket_channel
+        self.buy_again_button = Button(label="Comprar de nuevo", style=discord.ButtonStyle.primary, custom_id="buy_again")
+        self.close_ticket_button = Button(label="Cerrar Ticket", style=discord.ButtonStyle.danger, custom_id="close_ticket")
+
+        self.buy_again_button.callback = self.buy_again
+        self.close_ticket_button.callback = self.close_ticket
+
+        self.add_item(self.buy_again_button)
+        self.add_item(self.close_ticket_button)
+
+    async def buy_again(self, interaction: discord.Interaction):
+        await interaction.response.defer() 
+        await self.ticket_channel.purge(limit=100) 
+        await send_followers_image(self.ticket_channel) 
+        await self.ticket_channel.send("Vamos a empezar de nuevo. Selecciona la plataforma para seguidores:", view=PersistentPlatformSelectView())
+
+    async def close_ticket(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        await self.ticket_channel.delete()
 
 class TicketView(View):
     def __init__(self):
@@ -507,10 +587,10 @@ class TicketSelect(Select):
             description=f"Holaa {member.mention}, este es tu ticket.",
             color=discord.Color.green()
         )
-        await ticket_channel.send(embed=embed_ticket)  
+        await ticket_channel.send(embed=embed_ticket) 
 
         if self.values[0] == "buy_followers":
-            await send_followers_image(ticket_channel)
+            await send_followers_image(ticket_channel)  
             await ticket_channel.send("Selecciona la plataforma para seguidores:", view=PersistentPlatformSelectView())
         else:
             close_ticket_button = Button(label="Cerrar Ticket", style=discord.ButtonStyle.danger, custom_id="cerrar_ticket_general")
@@ -526,6 +606,8 @@ class TicketSelect(Select):
             await ticket_channel.send("Usa este botón para cerrar el ticket cuando hayas terminado o necesites ayuda.", view=close_ticket_view)
 
         await interaction.response.send_message(f"Ticket creado: {ticket_channel.mention}", ephemeral=True)
+
+        
 
 @bot.event
 async def on_ready():
@@ -548,4 +630,5 @@ async def on_ready():
     await canal.send(embed=embed_intro, view=view)
     print(f"Botón de creación de ticket enviado al canal: {canal.name}")
 
-bot.run('TOKEN DEL BOT DE DISCORD')
+
+bot.run('EL TOKEN DE TU BOT DE DISCORD')
